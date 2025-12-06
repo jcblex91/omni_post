@@ -53,8 +53,38 @@ app.get('/api/news', async (req, res) => {
 
         console.log(`[Server] Items Found: ${feed.items.length}`);
 
+        // Filter out non-news content
+        const newsKeywords = ['news', 'report', 'announce', 'update', 'break', 'confirm', 'reveal', 'state', 'say', 'tell', 'claim'];
+        const spamKeywords = ['buy', 'sale', 'discount', 'offer', 'deal', 'shop', 'store', 'price', 'cheap', 'free shipping', 'limited time', 'click here', 'subscribe', 'follow us'];
+
+        const filteredItems = feed.items.filter(item => {
+            const titleLower = item.title.toLowerCase();
+
+            // Remove obvious spam/promotional content
+            if (spamKeywords.some(keyword => titleLower.includes(keyword))) {
+                console.log(`[Server] Filtered out promotional: ${item.title}`);
+                return false;
+            }
+
+            // Remove very short titles (likely not real news)
+            if (item.title.length < 20) {
+                console.log(`[Server] Filtered out short title: ${item.title}`);
+                return false;
+            }
+
+            // Remove items without proper dates
+            if (!item.pubDate) {
+                console.log(`[Server] Filtered out no date: ${item.title}`);
+                return false;
+            }
+
+            return true;
+        });
+
+        console.log(`[Server] After filtering: ${filteredItems.length} articles`);
+
         // Format to match old API structure expected by frontend
-        const articles = feed.items.map(item => ({
+        const articles = filteredItems.map(item => ({
             title: item.title,
             source: { name: item.creator || 'Google News' },
             url: item.link,
@@ -102,7 +132,24 @@ app.get('/api/trending', async (req, res) => {
 
         const feed = await parser.parseURL(feedUrl);
 
-        const articles = feed.items.map(item => ({
+        // Filter out non-news content (same as /api/news)
+        const spamKeywords = ['buy', 'sale', 'discount', 'offer', 'deal', 'shop', 'store', 'price', 'cheap', 'free shipping', 'limited time', 'click here', 'subscribe', 'follow us'];
+
+        const filteredItems = feed.items.filter(item => {
+            const titleLower = item.title.toLowerCase();
+
+            if (spamKeywords.some(keyword => titleLower.includes(keyword))) {
+                return false;
+            }
+
+            if (item.title.length < 20 || !item.pubDate) {
+                return false;
+            }
+
+            return true;
+        });
+
+        const articles = filteredItems.map(item => ({
             title: item.title,
             link: item.link,
             pubDate: item.pubDate
