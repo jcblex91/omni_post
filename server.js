@@ -139,6 +139,25 @@ app.get('/api/suggest', async (req, res) => {
     }
 });
 
+// URL Shortening endpoint
+app.get('/api/shorten', async (req, res) => {
+    const { url } = req.query;
+
+    if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+    }
+
+    try {
+        // Using TinyURL API (free, no API key needed)
+        const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
+        res.json({ shortUrl: response.data });
+    } catch (error) {
+        console.error('Shorten Error:', error);
+        // Fallback to original URL if shortening fails
+        res.json({ shortUrl: url });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });

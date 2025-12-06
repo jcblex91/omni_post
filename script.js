@@ -174,6 +174,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function shortenUrl(longUrl) {
+        if (!longUrl) return longUrl;
+        try {
+            const response = await fetch(`/api/shorten?url=${encodeURIComponent(longUrl)}`);
+            const data = await response.json();
+            return data.shortUrl || longUrl;
+        } catch (error) {
+            console.error('Shorten error:', error);
+            return longUrl;
+        }
+    }
+
     function generatePost(platform, tone, topic, context) {
         const platformTemplates = templates[platform] || templates['twitter'];
 
@@ -257,19 +269,19 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsSection.classList.add('hidden');
         resultsSection.innerHTML = '';
 
-        setTimeout(() => {
+        setTimeout(async () => {
             loader.classList.add('hidden');
             resultsSection.classList.remove('hidden');
             generateBtn.disabled = false;
 
-            selectedPlatforms.forEach(platform => {
+            for (const platform of selectedPlatforms) {
                 const content = generatePost(platform, defaultTone, topic, context);
-                createCard(platform, content, 0);
-            });
+                await createCard(platform, content, 0);
+            }
         }, 1500);
     });
 
-    function createCard(platform, content, articleIndex) {
+    async function createCard(platform, content, articleIndex) {
         const card = document.createElement('div');
         card.className = `result-card glass-panel platform-${platform}`;
 
@@ -278,9 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
         card.dataset.topic = topicInput.value.trim();
         card.dataset.tone = defaultTone;
 
-        // Store URL in dataset if available
+        // Shorten and store URL
         if (availableArticles && availableArticles[articleIndex] && availableArticles[articleIndex].url) {
-            card.dataset.newsUrl = availableArticles[articleIndex].url;
+            const shortUrl = await shortenUrl(availableArticles[articleIndex].url);
+            card.dataset.newsUrl = shortUrl;
         }
 
         let iconClass = '';
@@ -327,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const currentTone = defaultTone;
 
-        // Add news URL to content if available
+        // Add shortened URL to content
         let finalContent = content;
         if (card.dataset.newsUrl) {
             finalContent = content + '\n\n🔗 ' + card.dataset.newsUrl;
@@ -371,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsSection.appendChild(card);
     }
 
-    window.changeNews = function (btn, direction) {
+    window.changeNews = async function (btn, direction) {
         const card = btn.closest('.result-card');
         const platform = card.dataset.platform;
         const topic = card.dataset.topic;
@@ -387,13 +400,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const newArticle = availableArticles[newIndex];
         const newContext = cleanHeadline(newArticle.title);
 
-        // Update stored URL in card dataset
+        // Shorten and update URL
         if (newArticle.url) {
-            card.dataset.newsUrl = newArticle.url;
+            const shortUrl = await shortenUrl(newArticle.url);
+            card.dataset.newsUrl = shortUrl;
         }
 
         const newContent = generatePost(platform, tone, topic, newContext);
-        const finalContent = newContent + '\n\n🔗 ' + newArticle.url;
+        const finalContent = card.dataset.newsUrl ? newContent + '\n\n🔗 ' + card.dataset.newsUrl : newContent;
 
         const contentDiv = card.querySelector('.card-content');
         contentDiv.style.opacity = '0';
@@ -439,12 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newContent = generatePost(platform, newTone, topic, context);
-
-        // Add URL to content from card dataset
-        let finalContent = newContent;
-        if (card.dataset.newsUrl) {
-            finalContent = newContent + '\n\n🔗 ' + card.dataset.newsUrl;
-        }
+        const finalContent = card.dataset.newsUrl ? newContent + '\n\n🔗 ' + card.dataset.newsUrl : newContent;
 
         const contentDiv = card.querySelector('.card-content');
         contentDiv.style.opacity = '0';
