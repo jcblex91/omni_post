@@ -1,0 +1,647 @@
+document.addEventListener('DOMContentLoaded', () => {
+
+    // State
+    let availableArticles = [];
+    const defaultTone = 'news'; // Default tone since global selector is removed
+
+    // Nodes
+    const topicInput = document.getElementById('topicInput');
+    const trendingBtn = document.getElementById('trendingBtn');
+    const contextInput = document.getElementById('contextInput');
+    const fetchNewsBtn = document.getElementById('fetchNewsBtn');
+    const countrySelect = document.getElementById('countrySelect');
+    const generateBtn = document.getElementById('generateBtn');
+    const resultsSection = document.getElementById('resultsSection');
+    const loader = document.getElementById('loader');
+
+    // Templates Database
+    const templates = {
+        twitter: {
+            professional: [
+                "Excited to share some thoughts on {topic}. Key takeaway: consistency is key. 🚀 #Leadership #Growth #{topic}",
+                "Exploring the impact of {topic} on today's market. The results are promising. 📈 What are your thoughts? #{topic} #Business",
+                "Just published a deep dive into {topic}. It's time to rethink our strategies. 💡 #{topic} #Innovation"
+            ],
+            news: [
+                "{context}\n\n#{topic} #News",
+                "📰 {context}\n\n#{topic}",
+                "{context}\n\nThoughts? #{topic}"
+            ],
+            witty: [
+                "They say money can't buy happiness, but have you tried {topic}? 😏 #LifeHacks #{topic}",
+                "Me vs {topic}: The ultimate showdown. Spoiler: {topic} wins every time. 🏳️ #{topic} #WeekendVibes",
+                "Current mood: 50% caffeine, 50% {topic}. ☕ #{topic} #Relatable"
+            ],
+            inspirational: [
+                "Believe in the power of {topic}. It starts with a single step. ✨ #{topic} #Motivation",
+                "{topic} isn't just a goal, it's a journey. Embrace it. 🌟 #{topic} #Inspiration",
+                "The future belongs to those who understand {topic}. Dream big. 🚀 #{topic} #Future"
+            ],
+            sales: [
+                "🔥 FLASH SALE! Get the best {topic} solution now! Limited time only. ⏰ Link in bio! #{topic} #Deal",
+                "Upgrade your life with our premium {topic}. You deserve it. 💎 Shop now! #{topic} #Sale",
+                "Don't miss out on the {topic} revolution. Join thousands of happy customers today! 🛒 #{topic}"
+            ],
+            educational: [
+                "Did you know? {topic} can increase productivity by 20%. Here's how: 🧵 👇 #{topic} #Edu",
+                "3 Quick Tips for mastering {topic}: 1. Start small 2. Be consistent 3. Analyze results. 📊 #{topic} #Tips",
+                "Demystifying {topic}: It's simpler than you think. Let's break it down. 🧠 #{topic} #Learning"
+            ],
+            entertainment: [
+                "{context}\n\n🎬 #{topic} #Entertainment",
+                "🍿 {context}\n\n#{topic} #Fun",
+                "{context}\n\nThis is wild! 😂 #{topic}"
+            ]
+        },
+        linkedin: {
+            professional: [
+                "I've been reflecting on the importance of {topic} in our industry. It's clear that adapting to this shift is crucial for long-term success. \n\nHow is your organization handling {topic}? Let's discuss in the comments. \n\n#{topic} #ProfessionalDevelopment #IndustryTrends",
+                "Thrilled to announce our latest initiative focusing on {topic}. We believe this will be a game-changer for our clients and the ecosystem at large. \n\nProud of the team for making this happen! 👏 \n\n#{topic} #Innovation #TeamWork",
+            ],
+            news: [
+                "{context}\n\nThoughts on this? #{topic}",
+                "Interesting: {context}\n\n#{topic}",
+                "{context}\n\nWhat's your take? #{topic}"
+            ],
+            witty: [
+                "Unpopular opinion: {topic} is the new coffee. You can't function without it. ☕ \n\nOkay, maybe that's a stretch, but it's close. \n\nWho agrees? 👇 \n\n#{topic} #WorkLife #Humor",
+                "My face when someone mentions {topic} in a meeting: 🤩 \n\nSerious question though, are we underestimating the power of {topic}? \n\n#{topic} #CorporateLife #MondayMotivation"
+            ],
+            inspirational: [
+                "\"The only way to do great work is to love what you do.\" - Steve Jobs. \n\nThis quote reminds me of my journey with {topic}. It hasn't always been easy, but it's always been worth it. \n\nKeep pushing boundaries. 💪 \n\n#{topic} #Mindset #Success",
+                "Success isn't accidental. It's built on pillars like {topic}. \n\nWhen we focus on {topic}, we open doors we didn't even know existed. \n\nWhat doors are you opening today? 🚪 \n\n#{topic} #GrowthCouture #Motivation"
+            ],
+            sales: [
+                "🚨 ATTENTION NETWORK 🚨 \n\nWe are revolutionizing the way you experience {topic}. \n\nFor a limited time, get exclusive access to our {topic} toolkit. Don't let your competitors get ahead. \n\n👉 Click the link in the featured section to claim yours. \n\n#{topic} #B2B #GrowthHacking",
+                "Is your business ready for the next level? \n\nOur {topic} solutions are designed to scale with you. See why 500+ companies trust us. \n\nLet's connect! 🤝 \n\n#{topic} #SaaS #BusinessGrowth"
+            ],
+            educational: [
+                "Let's talk about {topic}. \n\nHere are 5 reasons why it should be on your radar in 2025: \n1️⃣ Efficiency \n2️⃣ Scalability \n3️⃣ Cost-savings \n4️⃣ Employee satisfaction \n5️⃣ Future-proofing \n\nWhich one matters most to you? \n\n#{topic} #KnowledgeShare #Education"
+            ],
+            entertainment: [
+                "{context}\n\nInteresting! #{topic}",
+                "{context}\n\n#{topic} #Entertainment"
+            ]
+        },
+        instagram: {
+            professional: [
+                "Behind the scenes working on {topic}. 🏢 \n.\n.\n.\n#{topic} #WorkMode #Hustle #OfficeLife",
+                "POV: Mastering {topic}. 💼 \n.\n.\n.\n#{topic} #CareerGoals #Business #Success"
+            ],
+            news: [
+                "{context} 📰\n.\n.\n.\n#{topic} #News",
+                "{context}\n.\n.\n.\n#{topic} #Update"
+            ],
+            witty: [
+                "If {topic} was a person, we'd be best friends. 👯‍♀️ \n.\n.\n.\n#{topic} #Bestie #Vibe #Funny",
+                "Trying to handle {topic} like... 🙃 \n.\n.\n.\n#{topic} #Mood #DailyGrind #InstaDaily"
+            ],
+            inspirational: [
+                "Dream it. Believe it. Build it. {topic}. ✨ \n.\n.\n.\n#{topic} #Inspo #DreamBig #Aesthetic",
+                "Your vibe attracts your tribe. Let's talk {topic}. 🌸 \n.\n.\n.\n#{topic} #GoodVibes #Positivity #Wellness"
+            ],
+            sales: [
+                "✨ NEW ARRIVAL ✨ \nExperience the magic of {topic}. Link in bio! 🛍️ \n.\n.\n.\n#{topic} #ShopSmall #MustHave #Trending",
+                "Don't wait! {topic} is selling out fast. 🏃💨 \n.\n.\n.\n#{topic} #FlashSale #Shopping #Style"
+            ],
+            educational: [
+                "Notes on {topic} 📝 \nSwipe to learn more! 👉 \n.\n.\n.\n#{topic} #Learn #StudyGram #Tips"
+            ],
+            entertainment: [
+                "{context} 🎬\n.\n.\n.\n#{topic} #Entertainment #Viral",
+                "{context}\n.\n.\n.\n#{topic} #Fun #Trending"
+            ]
+        },
+        facebook: {
+            professional: [
+                "We are continuously improving our {topic} strategies to better serve our community. Thank you for your support! #{topic} #Community",
+                "Great discussion today about {topic}. It's amazing to see how much progress we've made. #{topic} #Update"
+            ],
+            news: [
+                "{context}\n\nWhat do you think? #{topic}",
+                "{context}\n\n#{topic}"
+            ],
+            witty: [
+                "Just a friendly reminder that {topic} is basically magic. 🪄 Who's with me? #{topic}",
+                "If you love {topic}, raise your hand! 🙋‍♂️ If not... we need to talk. 😂 #{topic}"
+            ],
+            inspirational: [
+                "Start your day with a little {topic} and good things will follow. ☀️ Happy Monday everyone! #{topic} #Positivity",
+                "Never underestimate the impact of {topic} on your life. Small changes, big results. ❤️ #{topic}"
+            ],
+            sales: [
+                function getRandom(arr) {
+                    return arr[Math.floor(Math.random() * arr.length)];
+                }
+
+    // Helper: Clean headline by removing source
+    function cleanHeadline(title) {
+                    if (!title) return '';
+                    // Google News format: "Headline - Source Name"
+                    const parts = title.split(' - ');
+                    if (parts.length > 1) {
+                        // Remove the last part (source) and join the rest
+                        parts.pop();
+                        return parts.join(' - ').trim();
+                    }
+                    return title.trim();
+                }
+
+    // Helper: Extract source from headline
+    function extractSource(title) {
+                    if (!title) return '';
+                    const parts = title.split(' - ');
+                    if (parts.length > 1) {
+                        return parts[parts.length - 1].trim();
+                    }
+                    return '';
+                }
+
+    // New: Fetch News
+    async function fetchNews(topic) {
+                    if (!topic) return null;
+
+                    try {
+                        // Call local backend
+                        const country = countrySelect.value;
+                        const url = `/api/news?topic=${encodeURIComponent(topic)}&country=${country}`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+
+                        console.log('Local API Response:', data);
+
+                        if (data.status === 'ok' && data.articles && data.articles.length > 0) {
+                            // Store globally
+                            availableArticles = data.articles;
+                            return data.articles[0].title;
+                        } else {
+                            console.warn('News Check:', data);
+                            availableArticles = [];
+                            return null;
+                        }
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        return null;
+                    }
+                }
+
+    // Helper: Generate post content
+    function generatePost(platform, tone, topic, context) {
+                    // Fallback to 'educational' if tone not found
+                    const platformTemplates = templates[platform] || templates['twitter'];
+
+                    // If context is provided, prioritize 'news' templates
+                    let toneTemplates;
+                    if (context && context.length > 0) {
+                        // Force use of news templates
+                        if (platformTemplates['news'] && platformTemplates['news'].length > 0) {
+                            toneTemplates = platformTemplates['news'];
+                        } else {
+                            // Fallback: Create a generic news template on the fly if one doesn't exist for this platform
+                            toneTemplates = [
+                                "Breaking: {context}. This is huge for {topic}! 📢 #{topic} #News",
+                                "Update: {context}. What does this mean for {topic}? #{topic}"
+                            ];
+                        }
+                    } else {
+                        toneTemplates = platformTemplates[tone] || platformTemplates['educational'];
+                    }
+
+                    // Pick random template
+                    let template = getRandom(toneTemplates);
+
+                    // Replace placeholders
+                    let finalPost = template.replace(/{topic}/g, topic);
+                    if (context) {
+                        finalPost = finalPost.replace(/{context}/g, context);
+                    }
+
+                    return finalPost;
+                }
+
+    // Event Listener: Fetch News
+    fetchNewsBtn.addEventListener('click', async () => {
+                    const topic = topicInput.value.trim();
+                    if (!topic) {
+                        alert('Please enter a topic to search for news! 🗞️');
+                        return;
+                    }
+
+                    // Visual feedback
+                    const originalIcon = fetchNewsBtn.innerHTML;
+                    fetchNewsBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;"></div>';
+                    fetchNewsBtn.disabled = true;
+
+                    const newsHeadline = await fetchNews(topic);
+
+                    if (newsHeadline) {
+                        // Clean the headline before displaying
+                        contextInput.value = cleanHeadline(newsHeadline);
+                        // flash success
+                        fetchNewsBtn.style.color = '#4ade80';
+                    } else {
+                        alert('No recent news found for this topic (or API limit reached).');
+                    }
+
+                    // Restore
+                    fetchNewsBtn.innerHTML = originalIcon;
+                    fetchNewsBtn.disabled = false;
+                    setTimeout(() => fetchNewsBtn.style.color = '', 2000);
+                });
+
+            // Event Listener: Generate
+            generateBtn.addEventListener('click', async () => {
+                const topic = topicInput.value.trim();
+                let context = contextInput.value.trim();
+                const tone = toneSelect.value;
+                const selectedPlatforms = Array.from(document.querySelectorAll('.platform-toggles input:checked'))
+                    .map(input => input.value);
+
+                if (!topic) {
+                    alert('Please enter a topic first! ✨');
+                    return;
+                }
+
+                if (selectedPlatforms.length === 0) {
+                    alert('Please select at least one platform! 📱');
+                    return;
+                }
+
+                // Auto-fetch if context is empty
+                if (!context && availableArticles.length === 0) {
+                    generateBtn.innerHTML = '<span>Scanning News...</span> <i class="fa-solid fa-satellite-dish"></i>';
+                    try {
+                        const fetchedHeadline = await fetchNews(topic);
+                        if (fetchedHeadline) {
+                            // Clean the headline before using
+                            context = cleanHeadline(fetchedHeadline);
+                            // Also update the UI input so the user sees what was used
+                            contextInput.value = context;
+                        }
+                    } catch (e) {
+                        console.error("Auto-fetch failed", e);
+                    }
+                    generateBtn.innerHTML = '<span>Generate Posts</span> <i class="fa-solid fa-wand-magic-sparkles"></i>';
+                }
+
+                // Show Loader
+                generateBtn.disabled = true;
+                loader.classList.remove('hidden');
+                resultsSection.classList.add('hidden');
+                resultsSection.innerHTML = ''; // Clear previous
+
+                // Simulate Network Delay
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    resultsSection.classList.remove('hidden');
+                    generateBtn.disabled = false;
+
+                    selectedPlatforms.forEach(platform => {
+                        const content = generatePost(platform, tone, topic, context);
+                        // Create card with logic, default to 0 index if news exists
+                        createCard(platform, content, 0);
+                    });
+                }, 1500);
+            });
+
+            function createCard(platform, content, articleIndex) {
+                const card = document.createElement('div');
+    card.className = `result-card glass-panel platform-${platform}`;
+
+    // Metadata for Carousel (Store as attributes)
+    card.dataset.platform = platform;
+    card.dataset.index = articleIndex;
+    card.dataset.topic = topicInput.value.trim();
+    card.dataset.tone = defaultTone;
+
+    let iconClass = '';
+    switch (platform) {
+        case 'twitter': iconClass = 'fa-brands fa-x-twitter'; break;
+        case 'linkedin': iconClass = 'fa-brands fa-linkedin-in'; break;
+        case 'instagram': iconClass = 'fa-brands fa-instagram'; break;
+        case 'facebook': iconClass = 'fa-brands fa-facebook-f'; break;
+    }
+
+    // Conditional Arrows
+    let navControls = '';
+    if (availableArticles && availableArticles.length > 1) {
+        navControls = `
+                <div class="nav-controls">
+                    <button class="nav-btn" onclick="changeNews(this, -1)" title="Previous News">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button class="nav-btn" onclick="changeNews(this, 1)" title="Next News">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            `;
+    }
+
+    // Get Article Data for timestamp and source
+    let timestampHTML = '';
+    if (availableArticles && availableArticles[articleIndex]) {
+        const article = availableArticles[articleIndex];
+        const source = extractSource(article.title);
+
+        if (article.pubDate) {
+            const date = new Date(article.pubDate);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Include source if available
+            const sourceText = source ? ` • ${source}` : '';
+            timestampHTML = `<div class="news-timestamp" data-exclude-copy="true"><i class="fa-regular fa-clock"></i> ${formattedDate}${sourceText}</div>`;
+        }
+    }
+
+    // Get current tone for selector
+    const currentTone = defaultTone;
+
+    card.innerHTML = `
+            <div class="card-header">
+                <div class="header-left" style="display:flex;align-items:center;gap:0.75rem;">
+                    <div class="platform-icon">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <h3>${platform.charAt(0).toUpperCase() + platform.slice(1)}</h3>
+                </div>
+                ${navControls}
+            </div>
+            <div class="card-content">${content}</div>
+            ${timestampHTML}
+            <div class="card-tone-selector">
+                <label>Vibe:</label>
+                <div class="tone-emoji-buttons">
+                    <button class="tone-emoji-btn ${currentTone === 'professional' ? 'active' : ''}" data-tone="professional" onclick="changeTone(this, 'professional')" title="Professional">👔</button>
+                    <button class="tone-emoji-btn ${currentTone === 'witty' ? 'active' : ''}" data-tone="witty" onclick="changeTone(this, 'witty')" title="Witty">🤪</button>
+                    <button class="tone-emoji-btn ${currentTone === 'news' ? 'active' : ''}" data-tone="news" onclick="changeTone(this, 'news')" title="News">📰</button>
+                    <button class="tone-emoji-btn ${currentTone === 'educational' ? 'active' : ''}" data-tone="educational" onclick="changeTone(this, 'educational')" title="Educational">📚</button>
+                    <button class="tone-emoji-btn ${currentTone === 'inspirational' ? 'active' : ''}" data-tone="inspirational" onclick="changeTone(this, 'inspirational')" title="Inspirational">✨</button>
+                    <button class="tone-emoji-btn ${currentTone === 'entertainment' ? 'active' : ''}" data-tone="entertainment" onclick="changeTone(this, 'entertainment')" title="Entertainment">🎬</button>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="action-btn post-btn" onclick="postContent(this, '${platform}')">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Post</span>
+                </button>
+                <button class="action-btn copy-btn" onclick="copyToClipboard(this)">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy</span>
+                </button>
+            </div>
+        `;
+
+    resultsSection.appendChild(card);
+}
+
+    // Carousel Logic
+    window.changeNews = function (btn, direction) {
+        const card = btn.closest('.result-card');
+        const platform = card.dataset.platform;
+        const topic = card.dataset.topic;
+        const tone = card.dataset.tone;
+        let currentIndex = parseInt(card.dataset.index);
+
+        if (availableArticles.length === 0) return;
+
+        // Calculate new index
+        let newIndex = currentIndex + direction;
+        if (newIndex >= availableArticles.length) newIndex = 0;
+        if (newIndex < 0) newIndex = availableArticles.length - 1;
+
+        // Get new context
+        const newArticle = availableArticles[newIndex];
+        // Clean the headline before using in post
+        const newContext = cleanHeadline(newArticle.title);
+
+        // Regenerate Content
+        const newContent = generatePost(platform, tone, topic, newContext);
+
+        // Update DOM
+        const contentDiv = card.querySelector('.card-content');
+        contentDiv.style.opacity = '0';
+        setTimeout(() => {
+            contentDiv.innerText = newContent;
+            contentDiv.style.opacity = '1';
+        }, 200);
+
+        // Update Timestamp if present
+        const timestampDiv = card.querySelector('.news-timestamp');
+        if (timestampDiv && newArticle.pubDate) {
+            const date = new Date(newArticle.pubDate);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Extract and include source
+            const source = extractSource(newArticle.title);
+            const sourceText = source ? ` • ${source}` : '';
+            timestampDiv.innerHTML = `<i class="fa-regular fa-clock"></i> ${formattedDate}${sourceText}`;
+        }
+
+        // Update Index
+        card.dataset.index = newIndex;
+    }
+
+    // Change tone when emoji button is clicked
+    window.changeTone = function (button, newTone) {
+        const card = button.closest('.result-card');
+        const platform = card.dataset.platform;
+        const topic = card.dataset.topic;
+        const currentIndex = parseInt(card.dataset.index);
+
+        // Update stored tone
+        card.dataset.tone = newTone;
+
+        // Update active state on buttons
+        const allButtons = card.querySelectorAll('.tone-emoji-btn');
+        allButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // Get context from current article
+        let context = '';
+        if (availableArticles && availableArticles[currentIndex]) {
+            context = cleanHeadline(availableArticles[currentIndex].title);
+        }
+
+        // Regenerate content with new tone
+        const newContent = generatePost(platform, newTone, topic, context);
+
+        // Update DOM with fade effect
+        const contentDiv = card.querySelector('.card-content');
+        contentDiv.style.opacity = '0';
+        setTimeout(() => {
+            contentDiv.innerText = newContent;
+            contentDiv.style.opacity = '1';
+        }, 200);
+    }
+
+    // Smart Post Redirect
+    window.postContent = async function (btn, platform) {
+        const card = btn.closest('.result-card');
+        // Only get the card-content, excluding the timestamp
+        const content = card.querySelector('.card-content').innerText;
+
+        // 1. Auto-Copy
+        try {
+            await navigator.clipboard.writeText(content);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+
+        // 2. Visual Feedback
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Opened!</span>`;
+        setTimeout(() => btn.innerHTML = originalHTML, 3000);
+
+        // 3. Redirect Logic
+        let url = '';
+        const encodedText = encodeURIComponent(content);
+
+        switch (platform) {
+            case 'twitter':
+                url = `https://twitter.com/intent/tweet?text=${encodedText}`;
+                break;
+            case 'linkedin':
+                url = `https://www.linkedin.com/feed/`; // LinkedIn API doesn't allow pre-fill via URL easily anymore
+                break;
+            case 'facebook':
+                url = `https://www.facebook.com/`;
+                break;
+            case 'instagram':
+                url = `https://www.instagram.com/`;
+                break;
+            default:
+                url = `https://${platform}.com`;
+        }
+
+        // Open in new tab
+        if (url) window.open(url, '_blank');
+
+        // Alert user for non-prefilled platforms
+        if (platform !== 'twitter') {
+            // Optional: You could use a nicer toast here, but for now simple feedback
+            // console.log('Content copied to clipboard. Paste it on the target site.');
+        }
+    }
+
+    // Generate Button Listener (End of file, keep as is)
+
+    // Event Listener: Trending Button
+    trendingBtn.addEventListener('click', async () => {
+        const country = countrySelect.value || 'us'; // Default to US if global for better trends
+
+        // Visual Feedback
+        const originalIcon = trendingBtn.innerHTML;
+        trendingBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;"></div>';
+        trendingBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/trending?country=${country}`);
+            const data = await response.json();
+
+            if (data.status === 'ok' && data.articles && data.articles.length > 0) {
+                // Pick random article
+                const randomArticle = getRandom(data.articles);
+                // Clean title using helper function
+                topicInput.value = cleanHeadline(randomArticle.title);
+
+                // Flash success
+                trendingBtn.style.color = '#ff6b6b';
+            } else {
+                alert('No trending topics found right now.');
+            }
+        } catch (error) {
+            console.error('Trending fetch error:', error);
+        }
+
+        // Restore
+        trendingBtn.innerHTML = originalIcon;
+        trendingBtn.disabled = false;
+        setTimeout(() => trendingBtn.style.color = '', 2000);
+    });
+
+// Autocomplete Logic
+const suggestionsList = document.getElementById('suggestionsList');
+let debounceTimer;
+
+topicInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(debounceTimer);
+
+    // Clear context and available articles when topic changes
+    contextInput.value = '';
+    availableArticles = [];
+
+    if (query.length < 2) {
+        suggestionsList.classList.add('hidden');
+        return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+        try {
+            console.log(`[Script] Requesting suggestions for "${query}"`);
+            const response = await fetch(`/api/suggest?q=${encodeURIComponent(query)}`);
+            const suggestions = await response.json();
+            console.log(`[Script] Got suggestions:`, suggestions);
+
+            if (suggestions.length > 0) {
+                renderSuggestions(suggestions);
+            } else {
+                suggestionsList.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Suggest error:', error);
+        }
+    }, 300);
+});
+
+function renderSuggestions(suggestions) {
+    suggestionsList.innerHTML = suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join('');
+    suggestionsList.classList.remove('hidden');
+}
+
+suggestionsList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('suggestion-item')) {
+        topicInput.value = e.target.innerText;
+        suggestionsList.classList.add('hidden');
+        // Optional: trigger search/news fetch immediately?
+    }
+});
+
+// Close suggestions on click outside
+document.addEventListener('click', (e) => {
+    if (!topicInput.contains(e.target) && !suggestionsList.contains(e.target)) {
+        suggestionsList.classList.add('hidden');
+    }
+});
+// Global function for copy button
+window.copyToClipboard = function (btn) {
+    const card = btn.closest('.result-card');
+    const content = card.querySelector('.card-content').innerText;
+
+    navigator.clipboard.writeText(content).then(() => {
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Copied!</span>`;
+        btn.style.color = '#4ade80'; // Success green
+        btn.style.borderColor = '#4ade80';
+
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
+    });
+}
+
+});

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniPost | AI Social Media Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="background-globes">
+        <div class="globe globe-1"></div>
+        <div class="globe globe-2"></div>
+        <div class="globe globe-3"></div>
+    </div>
+
+    <main class="container">
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i>
+                <h1>OmniPost</h1>
+            </div>
+            <p class="tagline">Generate viral content for every platform in seconds.</p>
+        </header>
+
+        <section class="input-section glass-panel">
+            <div class="input-group">
+                <label for="topicInput">What's your topic?</label>
+                <div class="input-with-btn">
+                    <input type="text" id="topicInput" placeholder="e.g., Sustainable Coffee, New Tech Launch..."
+                        autocomplete="off">
+                    <button id="trendingBtn" class="icon-btn" title="Auto-Fill Trending Topic">
+                        <i class="fa-solid fa-fire"></i>
+                    </button>
+                </div>
+                <!-- Suggestions Dropdown -->
+                <div id="suggestionsList" class="suggestions-dropdown hidden"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="contextInput">Any current news? (Optional)</label>
+                <div class="input-with-btn">
+                    <input type="text" id="contextInput"
+                        placeholder="e.g., Stock prices just soared, It's National Coffee Day..." autocomplete="off">
+                    <button id="fetchNewsBtn" class="icon-btn" title="Auto-Detect News">
+                        <i class="fa-solid fa-bolt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="options-row">
+                <div class="option-group">
+                    <label>Country Source</label>
+                    <div class="custom-select-wrapper">
+                        <select id="countrySelect">
+                            <option value="">Global 🌍</option>
+                            <option value="in">India 🇮🇳</option>
+                            <option value="kerala">India (Kerala) 🌴</option>
+                            <option value="us">USA 🇺🇸</option>
+                            <option value="ca">Canada 🇨🇦</option>
+                            <option value="gb">UK 🇬🇧</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label>Platforms</label>
+                    <div class="platform-toggles">
+                        <input type="checkbox" id="p-twitter" value="twitter" checked>
+                        <label for="p-twitter" class="platform-btn" title="Twitter/X"><i
+                                class="fa-brands fa-x-twitter"></i></label>
+
+                        <input type="checkbox" id="p-linkedin" value="linkedin" checked>
+                        <label for="p-linkedin" class="platform-btn" title="LinkedIn"><i
+                                class="fa-brands fa-linkedin-in"></i></label>
+
+                        <input type="checkbox" id="p-instagram" value="instagram" checked>
+                        <label for="p-instagram" class="platform-btn" title="Instagram"><i
+                                class="fa-brands fa-instagram"></i></label>
+
+                        <input type="checkbox" id="p-facebook" value="facebook" checked>
+                        <label for="p-facebook" class="platform-btn" title="Facebook"><i
+                                class="fa-brands fa-facebook-f"></i></label>
+                    </div>
+                </div>
+            </div>
+
+            <button id="generateBtn" class="generate-btn">
+                <span>Generate Posts</span>
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </button>
+        </section>
+
+        <section id="resultsSection" class="results-grid hidden">
+            <!-- Results will be injected here via JS -->
+        </section>
+
+        <div id="loader" class="loader hidden">
+            <div class="spinner"></div>
+            <p>Brewing magic...</p>
+        </div>
+
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; 2025 OmniPost. Built with <i class="fa-solid fa-heart"></i> by Antigravity.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
